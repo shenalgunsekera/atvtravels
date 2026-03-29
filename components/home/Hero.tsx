@@ -13,12 +13,11 @@ export default function Hero() {
         muted
         loop
         playsInline
-        poster="/images/gallery/photo-001.webp"
         className="absolute inset-0 w-full h-full object-cover"
         preload="auto"
       >
-        <source src="/videos/hero/hero.webm" type="video/webm" />
         <source src="/videos/hero/hero.mp4" type="video/mp4" />
+        <source src="/videos/hero/hero.webm" type="video/webm" />
       </video>
 
       {/* Dark gradient overlay */}
