@@ -24,7 +24,7 @@ export default function Hero() {
       <div className="absolute inset-0 bg-gradient-to-b from-navy/45 via-navy/40 to-navy/72" />
 
       {/* Hero content */}
-      <div className="relative z-10 text-center px-5 max-w-4xl mx-auto">
+      <div className="relative z-10 text-left sm:text-center px-5 sm:px-6 max-w-4xl w-full mx-auto">
         <motion.p
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -49,7 +49,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
-          className="text-white/80 text-base sm:text-lg leading-relaxed mb-9 max-w-2xl mx-auto"
+          className="text-white/80 text-base sm:text-lg leading-relaxed mb-9 max-w-2xl sm:mx-auto"
         >
           Premium tour packages to Thailand, Malaysia, Maldives &amp; Bali.
           <br className="hidden sm:block" />
@@ -60,7 +60,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.1, duration: 0.65, ease: [0.4, 0, 0.2, 1] }}
-          className="flex gap-4 justify-center flex-wrap"
+          className="flex gap-4 justify-start sm:justify-center flex-wrap"
         >
           <Link
             href="/packages"

@@ -40,7 +40,7 @@ export default function Navbar() {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
-        className={`pointer-events-auto w-full max-w-[1100px] h-16 rounded-2xl transition-all duration-400 ${
+        className={`pointer-events-auto w-full max-w-full sm:max-w-[1100px] h-16 rounded-2xl transition-all duration-400 ${
           scrolled
             ? "bg-navy/85 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.35)] border border-white/10"
             : "bg-white/10 backdrop-blur-md border border-white/15"

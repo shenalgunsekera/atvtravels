@@ -127,15 +127,6 @@ export default function ContactPage() {
                     </div>
                   ))}
 
-                  <a
-                    href={`https://wa.me/${WA_NUMBER}?text=${waMsg}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2.5 bg-gold hover:bg-gold-light text-white font-semibold py-3.5 px-6 rounded-full transition-all duration-300 hover:-translate-y-0.5 shadow-[0_6px_20px_rgba(201,168,76,0.3)] hover:shadow-[0_8px_24px_rgba(201,168,76,0.35)] w-full mt-4"
-                  >
-                    <MessageCircle size={17} />
-                    Chat on WhatsApp
-                  </a>
                 </div>
               </ScrollReveal>
             </div>
