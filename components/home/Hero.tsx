@@ -9,14 +9,17 @@ export default function Hero() {
     <section className="relative h-dvh min-h-[600px] flex items-center justify-center overflow-hidden bg-navy">
       {/* Looping background video */}
       <video
-        src="/videos/hero/hero.mp4"
         autoPlay
         muted
         loop
         playsInline
+        poster="/images/gallery/photo-001.webp"
         className="absolute inset-0 w-full h-full object-cover"
         preload="auto"
-      />
+      >
+        <source src="/videos/hero/hero.webm" type="video/webm" />
+        <source src="/videos/hero/hero.mp4" type="video/mp4" />
+      </video>
 
       {/* Dark gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-navy/45 via-navy/40 to-navy/72" />

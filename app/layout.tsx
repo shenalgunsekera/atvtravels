@@ -18,26 +18,53 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://atvtravels.lk"),
   title: {
-    default: "ATV Travels — Your Gateway to the World",
+    default: "ATV Travels | Sri Lanka Tour Agency for Thailand, Maldives, Bali and Malaysia",
     template: "%s | ATV Travels",
   },
   description:
-    "ATV Travels offers premium tour packages to Thailand, Malaysia, Maldives, and Bali. Discover unforgettable experiences crafted with care and delivered with excellence.",
+    "ATV Travels is a Sri Lanka travel agency offering tour packages to Thailand, Malaysia, Maldives, and Bali with flights, hotels, and guided support.",
   keywords: [
-    "Thailand tour packages",
-    "Maldives holiday",
-    "Bali tour",
-    "Malaysia travel",
-    "ATV Travels",
-    "Southeast Asia tours",
-    "affordable tour packages",
+    "ATV Travels Sri Lanka",
+    "Sri Lanka tour agency",
+    "Sri Lanka travel agency",
+    "Sri Lanka outbound tours",
+    "Thailand tour packages from Sri Lanka",
+    "Maldives packages from Sri Lanka",
+    "Bali packages from Sri Lanka",
+    "Malaysia tour packages from Sri Lanka",
+    "honeymoon packages Sri Lanka",
+    "travel packages Sri Lanka",
   ],
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "ATV Travels — Your Gateway to the World",
+    title: "ATV Travels | Sri Lanka Tour Agency",
     description:
-      "Premium tour packages to Thailand, Malaysia, Maldives & Bali. Crafted with care, delivered with excellence.",
+      "Tour packages from Sri Lanka to Thailand, Malaysia, Maldives, and Bali. Flights, stays, and support in one place.",
     type: "website",
+    url: "https://atvtravels.lk",
+    siteName: "ATV Travels",
+    locale: "en_LK",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ATV Travels | Sri Lanka Tour Agency",
+    description:
+      "Tour packages from Sri Lanka to Thailand, Malaysia, Maldives, and Bali.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
@@ -47,7 +74,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="en-LK" className={`${inter.variable} ${playfair.variable}`}>
       <body className="bg-white text-gray-800 antialiased">
         <Navbar />
         <main>{children}</main>

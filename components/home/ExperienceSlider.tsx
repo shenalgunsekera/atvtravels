@@ -46,6 +46,8 @@ function MarqueeRow({
               src={src}
               alt={`Happy ATV Travels customer ${(idx % photos.length) + 1}`}
               fill
+              unoptimized
+              loading={idx < 8 ? "eager" : "lazy"}
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="288px"
             />
