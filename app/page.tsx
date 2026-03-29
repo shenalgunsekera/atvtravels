@@ -36,7 +36,7 @@ export default function HomePage() {
     name: "ATV Travels",
     url: "https://atvtravels.lk",
     telephone: "+94 71 417 9589",
-    email: "info@atvtravels.com",
+    email: "director.atvcreations@gmail.com",
     areaServed: "LK",
     address: {
       "@type": "PostalAddress",
