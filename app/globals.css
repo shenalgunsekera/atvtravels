@@ -58,4 +58,33 @@
     padding-top: clamp(60px, 8vw, 110px);
     padding-bottom: clamp(60px, 8vw, 110px);
   }
+
+  .loader-pulse {
+    animation: loaderPulse 1.8s ease-in-out infinite;
+  }
+
+  .loader-sweep {
+    animation: loaderSweep 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes loaderPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+
+@keyframes loaderSweep {
+  0% {
+    transform: translateX(-130%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
 }
