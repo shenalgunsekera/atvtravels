@@ -7,10 +7,10 @@ export async function GET(req: NextRequest) {
   const country = req.nextUrl.searchParams.get("country");
 
   if (country) {
-    const data = getCountry(country.toLowerCase());
+    const data = await getCountry(country.toLowerCase());
     if (!data) return NextResponse.json({ error: "Country not found" }, { status: 404 });
     return NextResponse.json(data);
   }
 
-  return NextResponse.json(getAllCountries());
+  return NextResponse.json(await getAllCountries());
 }

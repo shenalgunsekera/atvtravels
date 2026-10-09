@@ -1,0 +1,368 @@
+{
+  "settings": {
+    "brandName": "ATV Travels",
+    "logoText": "ATV",
+    "logoSubtext": "Travels",
+    "logoImage": "",
+    "siteUrl": "https://atvtravels.lk",
+    "whatsappNumber": "94714179589",
+    "phonePrimary": "+94 71 417 9589",
+    "phoneSecondary": "+94 70 717 9589",
+    "email": "info@atvtravels.com",
+    "location": "Colombo, Sri Lanka",
+    "socials": {
+      "facebook": "",
+      "instagram": "",
+      "youtube": "",
+      "tiktok": ""
+    },
+    "whatsappButton": {
+      "visible": true,
+      "label": "Chat with Us",
+      "message": "Hi ATV Travels! I'd like to enquire about a tour package."
+    },
+    "navCtaLabel": "Enquire Now",
+    "footerAbout": "Your trusted partner for unforgettable journeys across Southeast Asia and beyond. Crafted with care, delivered with passion.",
+    "footerNote": "Designed with passion for travel ✦",
+    "seo": {
+      "title": "ATV Travels | Sri Lanka Tour Agency for Thailand, Maldives, Bali and Malaysia",
+      "description": "ATV Travels is a Sri Lanka travel agency offering tour packages to Thailand, Malaysia, Maldives, and Bali with flights, hotels, and guided support."
+    }
+  },
+  "gallery": {
+    "photos": [
+      "/images/gallery/photo-001.webp",
+      "/images/gallery/photo-002.webp",
+      "/images/gallery/photo-003.webp",
+      "/images/gallery/photo-004.webp",
+      "/images/gallery/photo-005.webp",
+      "/images/gallery/photo-006.webp",
+      "/images/gallery/photo-007.webp",
+      "/images/gallery/photo-008.webp",
+      "/images/gallery/photo-009.webp",
+      "/images/gallery/photo-010.webp",
+      "/images/gallery/photo-011.webp",
+      "/images/gallery/photo-012.webp",
+      "/images/gallery/photo-013.webp",
+      "/images/gallery/photo-014.webp",
+      "/images/gallery/photo-015.webp",
+      "/images/gallery/photo-016.webp",
+      "/images/gallery/photo-017.webp",
+      "/images/gallery/photo-018.webp",
+      "/images/gallery/photo-019.webp",
+      "/images/gallery/photo-020.webp",
+      "/images/gallery/photo-021.webp",
+      "/images/gallery/photo-022.webp",
+      "/images/gallery/photo-023.webp",
+      "/images/gallery/photo-024.webp",
+      "/images/gallery/photo-025.webp",
+      "/images/gallery/photo-026.webp",
+      "/images/gallery/photo-027.webp",
+      "/images/gallery/photo-028.webp",
+      "/images/gallery/photo-029.webp",
+      "/images/gallery/photo-030.webp",
+      "/images/gallery/photo-031.webp",
+      "/images/gallery/photo-032.webp",
+      "/images/gallery/photo-033.webp",
+      "/images/gallery/photo-034.webp",
+      "/images/gallery/photo-035.webp",
+      "/images/gallery/photo-036.webp",
+      "/images/gallery/photo-037.webp",
+      "/images/gallery/photo-038.webp",
+      "/images/gallery/photo-039.webp",
+      "/images/gallery/photo-040.webp"
+    ]
+  },
+  "cta": {
+    "eyebrow": "Start Your Adventure",
+    "title": "Your Dream Holiday",
+    "titleAccent": "Awaits",
+    "text": "Talk to our travel experts today. Tell us where you want to go and we'll handle every last detail.",
+    "primaryLabel": "View All Packages",
+    "primaryHref": "/packages",
+    "whatsappLabel": "WhatsApp Us Now",
+    "whatsappMessage": "Hi ATV Travels! I'd like to plan my holiday."
+  },
+  "home": {
+    "seo": {
+      "title": "Sri Lanka Tour Packages to Thailand, Maldives, Bali and Malaysia",
+      "description": "Book trusted outbound tour packages from Sri Lanka with ATV Travels. Explore Thailand, Maldives, Bali, and Malaysia with complete travel support."
+    },
+    "hero": {
+      "eyebrow": "Explore the World with ATV Travels",
+      "title": "Your Journey,",
+      "titleAccent": "Our Passion",
+      "subtitle": "Premium tour packages to Thailand, Malaysia, Maldives & Bali.\nCrafted with care. Delivered with excellence.",
+      "videoUrl": "/videos/hero/hero.webm?v=20260329",
+      "posterImage": "",
+      "primaryCta": {
+        "label": "Explore Packages",
+        "href": "/packages"
+      },
+      "secondaryCta": {
+        "label": "Get In Touch",
+        "href": "/contact"
+      }
+    },
+    "stats": {
+      "visible": true,
+      "items": [
+        {
+          "value": 2,
+          "suffix": "+",
+          "label": "Years Experience"
+        },
+        {
+          "value": 4,
+          "suffix": "",
+          "label": "Destinations"
+        },
+        {
+          "value": 100,
+          "suffix": "+",
+          "label": "Happy Travellers"
+        },
+        {
+          "value": 4,
+          "suffix": "+",
+          "label": "Tour Packages"
+        }
+      ]
+    },
+    "about": {
+      "visible": true,
+      "image": "/images/gallery/Shenal_gunasekera_upscale_upscaled.jpg",
+      "eyebrow": "Who We Are",
+      "title": "Your Trusted Travel Partner",
+      "paragraphs": [
+        "At ATV Travels, we believe every journey should be as seamless as it is memorable. With over a decade of experience crafting holidays across Southeast Asia, we take the stress out of travel so you can focus on the moments that matter.",
+        "From budget-friendly escapes to luxury retreats, our team handles every detail — flights, hotels, transfers, activities, and more — tailored perfectly to you."
+      ],
+      "features": [
+        "Personalised Itineraries",
+        "Flexible Pricing",
+        "24/7 Support",
+        "Trusted Local Partners",
+        "Group & Family Tours",
+        "Hassle-free Planning"
+      ],
+      "buttonLabel": "Learn More About Us",
+      "buttonHref": "/about"
+    },
+    "destinations": {
+      "visible": true,
+      "label": "Where We Go",
+      "title": "Our Destinations",
+      "description": "Handpicked destinations across Southeast Asia and the Indian Ocean, each offering a unique world to explore."
+    },
+    "gallery": {
+      "visible": true,
+      "label": "Real Travellers, Real Moments",
+      "title": "Happy Clients, Unforgettable Trips",
+      "description": "A glimpse into the journeys we've crafted for our travellers. Their smiles are our greatest reward."
+    },
+    "why": {
+      "visible": true,
+      "label": "Why ATV Travels",
+      "title": "The ATV Difference",
+      "description": "We don't just sell tours. We craft experiences that stay with you long after you return home.",
+      "items": [
+        {
+          "icon": "Shield",
+          "title": "Trusted & Reliable",
+          "desc": "Over 10 years of experience delivering exceptional holidays with a track record you can trust."
+        },
+        {
+          "icon": "DollarSign",
+          "title": "Best Value Pricing",
+          "desc": "Competitive rates with no hidden fees. We negotiate the best deals so your money goes further."
+        },
+        {
+          "icon": "Map",
+          "title": "Expert Itineraries",
+          "desc": "Every trip is carefully crafted by destination specialists who know these places inside out."
+        },
+        {
+          "icon": "Users",
+          "title": "Family & Group Friendly",
+          "desc": "Packages designed for couples, families, solo travellers, and large groups alike."
+        },
+        {
+          "icon": "Headphones",
+          "title": "24/7 Support",
+          "desc": "We're always just a WhatsApp message away, before, during, and after your trip."
+        },
+        {
+          "icon": "Star",
+          "title": "Flexible & Customisable",
+          "desc": "No rigid packages — every itinerary can be personalised to match your travel style."
+        }
+      ]
+    },
+    "testimonials": {
+      "visible": true,
+      "label": "Happy Travellers",
+      "title": "What Our Clients Say",
+      "description": "Real stories from real travellers who trusted ATV Travels with their most precious moments.",
+      "items": [
+        {
+          "name": "Priya & Rohan M.",
+          "trip": "Maldives Honeymoon",
+          "stars": 5,
+          "text": "ATV Travels made our honeymoon absolutely perfect. The water villa was stunning, everything was arranged seamlessly, and the team was available any time we had a question. Highly recommend!"
+        },
+        {
+          "name": "Sameera K.",
+          "trip": "Thailand Family Tour",
+          "stars": 5,
+          "text": "Travelling with three kids could have been stressful but ATV Travels handled everything! The kids loved the floating markets and Phi Phi Islands. Will definitely book with them again."
+        },
+        {
+          "name": "Dinesh & Amali P.",
+          "trip": "Bali Explorer",
+          "stars": 5,
+          "text": "The Bali itinerary was perfectly balanced — culture, adventure, and relaxation. Our guide was wonderful and the hotels were excellent. Worth every penny!"
+        }
+      ]
+    },
+    "ctaVisible": true
+  },
+  "about": {
+    "seo": {
+      "title": "About Us",
+      "description": "Learn about ATV Travels — our story, mission, and why hundreds of travellers choose us for their dream holidays across Southeast Asia."
+    },
+    "hero": {
+      "image": "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1600&q=80&auto=format&fit=crop",
+      "eyebrow": "Our Story",
+      "title": "About ATV Travels",
+      "subtitle": "A passion-driven travel agency built on trust, excellence, and unforgettable experiences."
+    },
+    "mission": {
+      "image": "https://images.unsplash.com/photo-1473625247510-8ceb1760943f?w=900&q=80&auto=format&fit=crop",
+      "eyebrow": "Our Mission",
+      "title": "Making Dream Holidays",
+      "titleAccent": "Reality",
+      "paragraphs": [
+        "ATV Travels was founded with a simple but powerful mission: to make exceptional travel accessible to everyone. We started as a small team of passionate travellers who were tired of cookie-cutter tours and impersonal service.",
+        "Over the years, we've grown into a trusted travel agency specialising in Southeast Asia and the Indian Ocean, helping hundreds of families, couples, and solo adventurers create memories that last a lifetime.",
+        "We believe travel is not just about the destination — it's about how you feel every single moment of the journey. That's why we obsess over every detail."
+      ],
+      "features": [
+        "Personalised packages",
+        "Transparent pricing",
+        "No hidden costs",
+        "Flexible itineraries",
+        "Family-friendly",
+        "Honeymoon specialists"
+      ]
+    },
+    "values": {
+      "visible": true,
+      "label": "What Drives Us",
+      "title": "Our Core Values",
+      "description": "The principles behind every trip we plan and every client relationship we build.",
+      "items": [
+        {
+          "icon": "Heart",
+          "title": "Passion for Travel",
+          "desc": "We're travellers first. Every itinerary is built with genuine love for the places we send you."
+        },
+        {
+          "icon": "Users",
+          "title": "People-First Service",
+          "desc": "From first enquiry to safe return, our team is always available, approachable, and attentive."
+        },
+        {
+          "icon": "Globe",
+          "title": "Local Expertise",
+          "desc": "Deep local knowledge across all four destinations means better stays, routes, and experiences."
+        },
+        {
+          "icon": "Award",
+          "title": "Quality Assured",
+          "desc": "Every hotel, transfer, and activity partner is personally vetted for quality and reliability."
+        }
+      ]
+    },
+    "gallery": {
+      "visible": true,
+      "label": "Real Travellers, Real Moments",
+      "title": "Happy Clients, Unforgettable Trips",
+      "description": "A glimpse into the journeys we've crafted for our travellers. Their smiles are our greatest reward."
+    },
+    "ctaVisible": true
+  },
+  "contact": {
+    "seo": {
+      "title": "Contact ATV Travels",
+      "description": "Contact ATV Travels in Sri Lanka for tour enquiries, WhatsApp booking support, and personalised travel planning."
+    },
+    "hero": {
+      "image": "https://images.unsplash.com/photo-1423666639041-f56000c27a9a?w=1600&q=80&auto=format&fit=crop",
+      "eyebrow": "We're Here to Help",
+      "title": "Get In Touch",
+      "subtitle": "Have a question or ready to start planning? Our team is just a message away."
+    },
+    "info": {
+      "title": "Contact Information",
+      "text": "Reach us by phone, WhatsApp, or email. We respond quickly — usually within the hour."
+    },
+    "form": {
+      "title": "Send an Enquiry",
+      "text": "Fill in the form and we'll get back to you with a personalised quote.",
+      "buttonLabel": "Send via WhatsApp",
+      "successTitle": "Opening WhatsApp!",
+      "successText": "Your enquiry has been formatted and sent to our WhatsApp. We'll reply as soon as possible!"
+    },
+    "faq": {
+      "visible": true,
+      "label": "FAQs",
+      "title": "Common Questions",
+      "description": "Quick answers to the things our travellers ask most.",
+      "items": [
+        {
+          "q": "Do your packages include visa assistance?",
+          "a": "Yes! We provide full guidance on visa requirements for all our destinations and can assist with the application process."
+        },
+        {
+          "q": "Can I customise a package?",
+          "a": "Absolutely. Every package can be tailored to your preferences — different hotels, extended stays, add-on activities, and more."
+        },
+        {
+          "q": "How do I confirm my booking?",
+          "a": "Simply enquire via WhatsApp or our contact form. Our team will prepare a personalised quote and walk you through the booking process."
+        },
+        {
+          "q": "Are prices fixed or negotiable?",
+          "a": "Prices vary based on travel dates and availability. Contact us and we'll find the best deal for your specific dates."
+        },
+        {
+          "q": "Do you offer group tour discounts?",
+          "a": "Yes, we offer special rates for groups of 6 or more. Contact us for a customised group quote."
+        }
+      ]
+    }
+  },
+  "packagesPage": {
+    "seo": {
+      "title": "Tour Packages from Sri Lanka",
+      "description": "Explore ATV Travels packages from Sri Lanka to Thailand, Malaysia, Maldives, and Bali with curated stays and experiences."
+    },
+    "hero": {
+      "image": "https://images.unsplash.com/photo-1488085061387-422e29b40080?w=1600&q=80&auto=format&fit=crop",
+      "eyebrow": "Explore & Discover",
+      "title": "Our Tour Packages",
+      "subtitle": "Handcrafted holiday packages across Southeast Asia and the Maldives. Contact us for the best price."
+    },
+    "intro": {
+      "label": "Browse by Destination",
+      "title": "Find Your Perfect Package",
+      "description": "Each package includes flights, hotel, transfers, and curated experiences. Contact us to get the best price for your travel dates."
+    },
+    "cardNote": "Contact us for pricing",
+    "enquireLabel": "Enquire",
+    "emptyText": "New packages for this destination are coming soon. Message us on WhatsApp for a custom quote.",
+    "ctaVisible": true
+  }
+}

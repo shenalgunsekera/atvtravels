@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Menu } from "lucide-react";
+import Logo from "./Logo";
+import type { SiteSettings } from "@/lib/site-types";
 
 const links = [
   { href: "/", label: "Home" },
@@ -13,7 +15,7 @@ const links = [
   { href: "/contact", label: "Contact" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ settings }: { settings: SiteSettings }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -48,9 +50,8 @@ export default function Navbar() {
       >
         <div className="px-5 sm:px-7 h-full flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex flex-col leading-none">
-            <span className="font-serif text-2xl font-bold text-white tracking-wide">ATV</span>
-            <span className="text-[0.55rem] tracking-[0.3em] text-gold font-semibold uppercase">Travels</span>
+          <Link href="/" aria-label={settings.brandName}>
+            <Logo settings={settings} />
           </Link>
 
           {/* Desktop links */}
@@ -77,7 +78,7 @@ export default function Navbar() {
                 href="/contact"
                 className="bg-gold hover:bg-gold-light text-navy font-semibold text-sm px-5 py-2.5 rounded-full transition-all duration-250 hover:-translate-y-0.5 hover:shadow-[0_6px_18px_rgba(201,168,76,0.45)]"
               >
-                Enquire Now
+                {settings.navCtaLabel}
               </Link>
             </li>
           </ul>
@@ -149,7 +150,7 @@ export default function Navbar() {
                   href="/contact"
                   className="mt-4 inline-block bg-gold text-navy font-semibold px-8 py-3 rounded-full text-base hover:bg-gold-light transition-colors"
                 >
-                  Enquire Now
+                  {settings.navCtaLabel}
                 </Link>
               </motion.li>
             </motion.ul>

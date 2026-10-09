@@ -1,242 +1,208 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Save, Eye, EyeOff, Edit3, X, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  ArrowRight, CircleCheck, DatabaseBackup, FolderOpen, House, Images, MapPin, Package, Plus, Settings, TriangleAlert, Upload,
+} from "lucide-react";
+import { Badge, Card, LoadError, PageHeader, Spinner } from "@/components/admin/ui";
+import { api, errorMessage } from "@/components/admin/api";
+import { timeAgo } from "@/components/admin/format";
+import { thumb, type MediaItem } from "@/components/admin/media";
+import type { BackupInfo } from "@/lib/store";
+import type { PackagesData, SiteContent } from "@/lib/site-types";
 
-type PackageData = {
-  id: string;
-  name: string;
-  duration: string;
-  image: string;
-  highlights: string[];
-  inclusions: string[];
-  description: string;
-};
+type Overview = { site: SiteContent; packages: PackagesData; media: MediaItem[]; backups: BackupInfo[] };
 
-type CountryData = {
-  id: string;
-  name: string;
-  tagline: string;
-  description: string;
-  packages: PackageData[];
-};
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+}
 
-export default function AdminPage() {
-  const [secret, setSecret] = useState("");
-  const [authed, setAuthed] = useState(false);
-  const [showSecret, setShowSecret] = useState(false);
-  const [data, setData] = useState<Record<string, CountryData> | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState<Partial<PackageData>>({});
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+export default function DashboardPage() {
+  const [data, setData] = useState<Overview | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  async function fetchData(key: string) {
-    const res = await fetch("/api/admin/packages", {
-      headers: { "x-admin-secret": key },
-    });
-    if (res.ok) {
-      setData(await res.json());
-      setAuthed(true);
-    } else {
-      alert("Invalid password");
-    }
+  const load = () => {
+    setError(null);
+    Promise.all([
+      api<{ data: SiteContent }>("/api/admin/content/site"),
+      api<{ data: PackagesData }>("/api/admin/content/packages"),
+      api<{ items: MediaItem[] }>("/api/admin/media"),
+      api<{ backups: BackupInfo[] }>("/api/admin/backups"),
+    ])
+      .then(([s, p, m, b]) => setData({ site: s.data, packages: p.data, media: m.items, backups: b.backups }))
+      .catch((e) => setError(errorMessage(e)));
+  };
+  useEffect(load, []);
+
+  if (error) return <LoadError message={error} onRetry={load} />;
+  if (!data) return <Spinner />;
+
+  const countries = Object.values(data.packages);
+  const packages = countries.flatMap((c) => c.packages.map((p) => ({ ...p, countryId: c.id, countryName: c.name })));
+  const live = packages.filter((p) => p.published).length;
+  const drafts = packages.length - live;
+  const uploads = data.media.filter((m) => !m.builtIn).length;
+  const lastBackup = data.backups[0];
+
+  // Things worth fixing, in priority order.
+  const issues: { text: string; href: string }[] = [];
+  const s = data.site.settings;
+  if (!/^\d{9,15}$/.test(s.whatsappNumber)) issues.push({ text: "WhatsApp number looks incomplete — enquiries won't reach you", href: "/admin/settings#contact" });
+  for (const c of countries) {
+    if (c.visible && !c.packages.some((p) => p.published)) issues.push({ text: `${c.name} has no published packages yet`, href: `/admin/packages/new?country=${c.id}` });
   }
-
-  async function saveEdit(countryId: string, pkgId: string) {
-    setSaving(true);
-    const res = await fetch("/api/admin/packages", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "x-admin-secret": secret,
-      },
-      body: JSON.stringify({ countryId, packageId: pkgId, updates: editDraft }),
-    });
-    setSaving(false);
-    if (res.ok) {
-      await fetchData(secret);
-      setEditingId(null);
-      setEditDraft({});
-      showToast("Saved successfully!");
-    } else {
-      showToast("Failed to save. Try again.");
-    }
+  for (const p of packages) {
+    if (!p.image) issues.push({ text: `"${p.name || "Untitled"}" has no photo`, href: `/admin/packages/${p.id}` });
+    else if (!p.description) issues.push({ text: `"${p.name}" has no description`, href: `/admin/packages/${p.id}` });
   }
+  if (!Object.values(s.socials).some(Boolean)) issues.push({ text: "Add your social media links so they show in the footer", href: "/admin/settings#social" });
 
-  function showToast(msg: string) {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  }
+  const stats = [
+    { label: "Live packages", value: live, sub: drafts ? `${drafts} draft${drafts === 1 ? "" : "s"}` : "No drafts", icon: Package, href: "/admin/packages" },
+    { label: "Destinations", value: countries.filter((c) => c.visible).length, sub: `${countries.length} total`, icon: MapPin, href: "/admin/destinations" },
+    { label: "Gallery photos", value: data.site.gallery.photos.length, sub: "On home & about", icon: Images, href: "/admin/gallery" },
+    { label: "Uploaded files", value: uploads, sub: `${data.media.length} in library`, icon: FolderOpen, href: "/admin/media" },
+  ];
 
-  function startEdit(pkg: PackageData) {
-    setEditingId(pkg.id);
-    setEditDraft({
-      name: pkg.name,
-      duration: pkg.duration,
-      description: pkg.description,
-      highlights: pkg.highlights,
-      inclusions: pkg.inclusions,
-      image: pkg.image,
-    });
-  }
-
-  if (!authed) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-sm">
-          <div className="flex flex-col leading-none mb-6">
-            <span className="font-serif text-2xl font-bold text-navy tracking-wide">ATV</span>
-            <span className="text-[0.55rem] tracking-[0.3em] text-gold font-semibold uppercase">Admin Panel</span>
-          </div>
-          <p className="text-gray-500 text-sm mb-6">Enter your admin password to manage packages.</p>
-          <div className="relative mb-4">
-            <input
-              type={showSecret ? "text" : "password"}
-              value={secret}
-              onChange={(e) => setSecret(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && fetchData(secret)}
-              placeholder="Admin password"
-              className="w-full px-4 py-3 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-gold pr-10"
-            />
-            <button
-              onClick={() => setShowSecret((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-navy"
-            >
-              {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
-          <button
-            onClick={() => fetchData(secret)}
-            className="w-full bg-navy hover:bg-navy-light text-white font-semibold py-3 rounded-full text-sm transition-colors"
-          >
-            Login
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const actions = [
+    { label: "Add a package", icon: Plus, href: "/admin/packages/new" },
+    { label: "Edit home page", icon: House, href: "/admin/pages/home" },
+    { label: "Upload photos", icon: Upload, href: "/admin/media" },
+    { label: "Contact details", icon: Settings, href: "/admin/settings#contact" },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-8 pb-16 px-4">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="font-serif text-navy text-2xl">Package Manager</h1>
-            <p className="text-gray-500 text-sm mt-1">Edit package details below. Changes save immediately.</p>
-          </div>
-          <button
-            onClick={() => setAuthed(false)}
-            className="text-xs text-gray-400 hover:text-navy transition-colors"
-          >
-            Sign out
-          </button>
-        </div>
+    <>
+      <PageHeader title={`${greeting()} 👋`} description="Here's an overview of your website." />
 
-        {/* Countries */}
-        {data && Object.values(data).map((country) => (
-          <div key={country.id} className="mb-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-2 h-6 rounded-full bg-gold" />
-              <h2 className="font-serif text-navy text-xl">{country.name}</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {country.packages.map((pkg) => (
-                <div key={pkg.id} className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-                  {editingId === pkg.id ? (
-                    <div className="space-y-3">
-                      <input
-                        value={editDraft.name ?? ""}
-                        onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-semibold outline-none focus:border-gold"
-                        placeholder="Package name"
-                      />
-                      <input
-                        value={editDraft.duration ?? ""}
-                        onChange={(e) => setEditDraft({ ...editDraft, duration: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-gold"
-                        placeholder="Duration (e.g. 5 Days / 4 Nights)"
-                      />
-                      <textarea
-                        value={editDraft.description ?? ""}
-                        onChange={(e) => setEditDraft({ ...editDraft, description: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-gold resize-none"
-                        rows={3}
-                        placeholder="Description"
-                      />
-                      <div>
-                        <label className="text-xs text-gray-400 mb-1 block">Highlights (comma-separated)</label>
-                        <input
-                          value={(editDraft.highlights ?? []).join(", ")}
-                          onChange={(e) => setEditDraft({ ...editDraft, highlights: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-gold"
-                          placeholder="Place 1, Place 2, ..."
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-400 mb-1 block">Inclusions (comma-separated)</label>
-                        <input
-                          value={(editDraft.inclusions ?? []).join(", ")}
-                          onChange={(e) => setEditDraft({ ...editDraft, inclusions: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-gold"
-                          placeholder="Flights, Hotel, ..."
-                        />
-                      </div>
-                      <div className="flex gap-2 pt-1">
-                        <button
-                          onClick={() => saveEdit(country.id, pkg.id)}
-                          disabled={saving}
-                          className="flex items-center gap-1.5 bg-gold text-navy font-semibold text-xs px-4 py-2 rounded-full transition-colors hover:bg-gold-light disabled:opacity-60"
-                        >
-                          <Save size={12} />
-                          {saving ? "Saving..." : "Save"}
-                        </button>
-                        <button
-                          onClick={() => { setEditingId(null); setEditDraft({}); }}
-                          className="flex items-center gap-1.5 bg-gray-100 text-gray-600 font-semibold text-xs px-4 py-2 rounded-full hover:bg-gray-200 transition-colors"
-                        >
-                          <X size={12} /> Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <div>
-                          <h3 className="font-serif text-navy text-base">{pkg.name}</h3>
-                          <span className="text-xs text-gray-400">{pkg.duration}</span>
-                        </div>
-                        <button
-                          onClick={() => startEdit(pkg)}
-                          className="flex items-center gap-1 text-xs text-gold hover:text-gold-dark font-medium flex-shrink-0 mt-0.5"
-                        >
-                          <Edit3 size={12} /> Edit
-                        </button>
-                      </div>
-                      <p className="text-gray-500 text-xs leading-relaxed mb-3">{pkg.description}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {pkg.highlights.map((h) => (
-                          <span key={h} className="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">{h}</span>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {stats.map(({ label, value, sub, icon: Icon, href }) => (
+          <Link key={label} href={href}>
+            <Card className="h-full p-4 transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+              <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-gold/10 text-gold-dark">
+                <Icon size={18} />
+              </div>
+              <p className="text-2xl font-semibold tabular-nums text-gray-900">{value}</p>
+              <p className="text-[13px] font-medium text-gray-700">{label}</p>
+              <p className="text-xs text-gray-400">{sub}</p>
+            </Card>
+          </Link>
         ))}
       </div>
 
-      {/* Toast */}
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-navy text-white text-sm px-5 py-3 rounded-full shadow-lg flex items-center gap-2">
-          <Check size={14} className="text-teal" />
-          {toast}
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <div className="space-y-6">
+          {/* Quick actions */}
+          <Card className="p-5">
+            <h2 className="mb-3 text-sm font-semibold text-gray-900">Quick actions</h2>
+            <div className="grid grid-cols-2 gap-2">
+              {actions.map(({ label, icon: Icon, href }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className="group flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-3 text-sm font-medium text-gray-700 transition-colors hover:border-gold/50 hover:bg-gold/5 hover:text-navy"
+                >
+                  <Icon size={16} className="text-gold-dark" />
+                  {label}
+                  <ArrowRight size={14} className="ml-auto text-gray-300 transition-transform group-hover:translate-x-0.5 group-hover:text-gold-dark" />
+                </Link>
+              ))}
+            </div>
+          </Card>
+
+          {/* Packages */}
+          <Card>
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <h2 className="text-sm font-semibold text-gray-900">Packages</h2>
+              <Link href="/admin/packages" className="text-xs font-semibold text-gold-dark hover:underline">View all</Link>
+            </div>
+            {packages.length === 0 ? (
+              <p className="px-5 py-8 text-center text-sm text-gray-500">
+                No packages yet. <Link href="/admin/packages/new" className="font-semibold text-gold-dark hover:underline">Add your first one →</Link>
+              </p>
+            ) : (
+              <ul className="divide-y divide-gray-100">
+                {packages.slice(0, 6).map((p) => (
+                  <li key={p.id}>
+                    <Link href={`/admin/packages/${p.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50">
+                      <span className="h-10 w-14 flex-shrink-0 overflow-hidden rounded-md bg-gray-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {p.image && <img src={thumb(p.image, 256)} alt="" className="h-full w-full object-cover" />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-gray-900">{p.name || "Untitled"}</span>
+                        <span className="block text-xs text-gray-500">{p.countryName} · {p.duration || "No duration"}</span>
+                      </span>
+                      {p.published ? <Badge tone="green">Live</Badge> : <Badge tone="amber">Draft</Badge>}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
         </div>
-      )}
-    </div>
+
+        <div className="space-y-6">
+          {/* Checklist */}
+          <Card className="p-5">
+            <h2 className="mb-3 text-sm font-semibold text-gray-900">Suggestions</h2>
+            {issues.length === 0 ? (
+              <p className="flex items-center gap-2 text-sm text-emerald-700">
+                <CircleCheck size={16} /> Everything looks great.
+              </p>
+            ) : (
+              <ul className="space-y-1">
+                {issues.slice(0, 6).map((i) => (
+                  <li key={i.text}>
+                    <Link href={i.href} className="group flex items-start gap-2.5 rounded-lg px-2 py-2 text-[13px] text-gray-700 hover:bg-amber-50">
+                      <TriangleAlert size={14} className="mt-0.5 flex-shrink-0 text-amber-500" />
+                      <span className="flex-1">{i.text}</span>
+                      <ArrowRight size={13} className="mt-0.5 text-gray-300 group-hover:text-amber-600" />
+                    </Link>
+                  </li>
+                ))}
+                {issues.length > 6 && <li className="px-2 pt-1 text-xs text-gray-400">+ {issues.length - 6} more</li>}
+              </ul>
+            )}
+          </Card>
+
+          {/* Backups */}
+          <Card className="p-5">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <DatabaseBackup size={17} />
+              </span>
+              <div className="flex-1">
+                <h2 className="text-sm font-semibold text-gray-900">Automatic backups</h2>
+                <p className="mt-0.5 text-[13px] text-gray-500">
+                  {lastBackup ? `Last change backed up ${timeAgo(lastBackup.createdAt)}.` : "Your first backup is made when you save a change."}
+                </p>
+                <Link href="/admin/backups" className="mt-2 inline-block text-xs font-semibold text-gold-dark hover:underline">Manage backups →</Link>
+              </div>
+            </div>
+          </Card>
+
+          {/* Pages */}
+          <Card className="p-5">
+            <h2 className="mb-3 text-sm font-semibold text-gray-900">Edit a page</h2>
+            <div className="space-y-1">
+              {[
+                { label: "Home", href: "/admin/pages/home" },
+                { label: "Tour packages", href: "/admin/pages/packages" },
+                { label: "About us", href: "/admin/pages/about" },
+                { label: "Contact", href: "/admin/pages/contact" },
+              ].map((p) => (
+                <Link key={p.href} href={p.href} className="flex items-center justify-between rounded-lg px-2 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-50 hover:text-navy">
+                  {p.label}
+                  <ArrowRight size={13} className="text-gray-300" />
+                </Link>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
+    </>
   );
 }

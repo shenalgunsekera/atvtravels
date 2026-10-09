@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
+import { getSite } from "@/lib/packages";
 
-export default function robots(): MetadataRoute.Robots {
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const base = (await getSite()).settings.siteUrl.replace(/\/$/, "");
   return {
     rules: [
       {
@@ -9,7 +11,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin", "/api/"],
       },
     ],
-    sitemap: "https://atvtravels.lk/sitemap.xml",
-    host: "https://atvtravels.lk",
+    sitemap: `${base}/sitemap.xml`,
+    host: base,
   };
 }

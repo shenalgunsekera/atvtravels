@@ -1,17 +1,14 @@
 "use client";
 
 import { MessageCircle } from "lucide-react";
+import type { SiteSettings } from "@/lib/site-types";
+import { whatsappUrl } from "@/lib/site-normalize";
 
-const WA_NUMBER = "94714179589";
-const WA_MESSAGE = encodeURIComponent(
-  "Hi ATV Travels! I'd like to enquire about a tour package."
-);
-const WA_URL = `https://wa.me/${WA_NUMBER}?text=${WA_MESSAGE}`;
-
-export default function WhatsAppButton() {
+export default function WhatsAppButton({ settings }: { settings: SiteSettings }) {
+  const { label, message } = settings.whatsappButton;
   return (
     <a
-      href={WA_URL}
+      href={whatsappUrl(settings.whatsappNumber, message)}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat on WhatsApp"
@@ -29,7 +26,7 @@ export default function WhatsAppButton() {
       "
     >
       <MessageCircle size={22} strokeWidth={2.2} />
-      <span className="hidden sm:inline">Chat with Us</span>
+      {label && <span className="hidden sm:inline">{label}</span>}
     </a>
   );
 }

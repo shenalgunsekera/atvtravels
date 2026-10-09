@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
+import { getSite } from "@/lib/packages";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://atvtravels.lk";
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const base = (await getSite()).settings.siteUrl.replace(/\/$/, "");
   const now = new Date();
 
   return [

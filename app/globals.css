@@ -99,3 +99,22 @@
     transform: translateX(260%);
   }
 }
+
+/* Admin panel micro-animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+/* Admin panel uses Inter throughout, including headings */
+.admin-ui h1, .admin-ui h2, .admin-ui h3, .admin-ui h4, .admin-ui h5 {
+  font-family: var(--font-inter);
+}
