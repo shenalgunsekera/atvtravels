@@ -1,6 +1,7 @@
 // All Postgres statements used by the app, kept dependency-free so they can be tested directly.
 
 export const MAX_BACKUPS_PER_DOC = 40;
+export const SCHEMA_LOCK_ID = 727274001; // arbitrary key for pg_advisory_xact_lock
 
 // Tables are created on first use, so there's no separate migration step to run.
 export const SCHEMA = [

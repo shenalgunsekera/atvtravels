@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { getSite } from "@/lib/packages";
 
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = (await getSite()).settings.siteUrl.replace(/\/$/, "");
   const now = new Date();

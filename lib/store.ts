@@ -30,8 +30,16 @@ export const usingDatabase = () => DATABASE_URL !== "";
 // ── Public API ─────────────────────────────────────────────────────────
 
 export async function readDoc<K extends DocName>(name: K): Promise<{ data: DocMap[K]; version: string }> {
-  const raw = usingDatabase() ? await dbRead(name) : await fileRead(name);
+  const raw = usingDatabase() ? await dbReadSafe(name) : await fileRead(name);
   return { data: DOCS[name].normalize(raw.data) as DocMap[K], version: raw.version };
+}
+
+// The build never talks to the database: database calls while Next prerenders pages and
+// routes (robots.txt, sitemap.xml) can stall the deploy. Pages are built from data/*.json and
+// refreshed from the database at runtime (see `revalidate` in app/(site)/layout.tsx).
+async function dbReadSafe(name: DocName) {
+  if (process.env.NEXT_PHASE === "phase-production-build") return { data: DOCS[name].seed, version: "0" };
+  return dbRead(name);
 }
 
 export async function writeDoc<K extends DocName>(
