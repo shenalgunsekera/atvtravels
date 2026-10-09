@@ -16,7 +16,7 @@ export default function GalleryPage() {
   const photos = doc.data?.gallery.photos ?? [];
   const setPhotos = (next: string[]) => doc.update((d) => { d.gallery.photos = next; });
   const { handlers, dragging, over } = useDragSort(photos, setPhotos);
-  const { upload, uploading } = useUploader((items) =>
+  const { upload, uploading, progress } = useUploader((items) =>
     doc.update((d) => {
       d.gallery.photos = [...items.filter((i) => i.kind === "image").map((i) => i.url), ...d.gallery.photos];
     })
@@ -54,7 +54,7 @@ export default function GalleryPage() {
         <Spinner />
       ) : (
         <div className="space-y-5">
-          <DropZone onFiles={upload} uploading={uploading} accept="image/jpeg,image/png,image/webp,image/avif,image/gif" />
+          <DropZone onFiles={upload} uploading={uploading} progress={progress} accept="image/jpeg,image/png,image/webp,image/avif,image/gif" />
 
           {photos.length === 0 ? (
             <EmptyState icon={<Images size={22} />} title="No photos yet" text="Upload photos above or add them from your media library." />

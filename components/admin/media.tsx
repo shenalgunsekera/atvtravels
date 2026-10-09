@@ -6,12 +6,14 @@ import { Button, Field, Modal, inputBase } from "./ui";
 import { api, errorMessage } from "./api";
 import { useToast } from "./toast";
 import { cn } from "@/lib/utils";
+import { cloudinaryImage, cloudinaryVideoPoster, isCloudinaryUrl } from "@/lib/cloudinary-url";
 import type { MediaItem } from "@/lib/media";
 
 export type { MediaItem };
 
 const ACCEPT_IMAGES = "image/jpeg,image/png,image/webp,image/avif,image/gif";
-const ACCEPT_ALL = `${ACCEPT_IMAGES},video/mp4,video/webm`;
+const ACCEPT_VIDEOS = "video/mp4,video/webm,video/quicktime";
+const ACCEPT_ALL = `${ACCEPT_IMAGES},${ACCEPT_VIDEOS}`;
 
 export function formatBytes(n: number) {
   if (n < 1024) return `${n} B`;
@@ -20,12 +22,14 @@ export function formatBytes(n: number) {
 }
 
 export function isVideoUrl(url: string) {
-  return /\.(mp4|webm)($|\?)/i.test(url);
+  return /\/video\/upload\//.test(url) || /\.(mp4|webm|mov)($|\?)/i.test(url);
 }
 
-// A small, fast preview via Next's image optimizer (width must be one of Next's default sizes).
+// A small, fast preview. Cloudinary resizes its own files; Unsplash and local files go through
+// Next's optimizer (width must be one of Next's default sizes).
 export function thumb(url: string, width: 128 | 256 | 384 | 640 | 1080 = 384) {
-  if (!url || /\.(gif|mp4|webm)($|\?)/i.test(url)) return url;
+  if (!url || isVideoUrl(url) || /\.gif($|\?)/i.test(url)) return url;
+  if (isCloudinaryUrl(url)) return cloudinaryImage(url, width);
   if (url.startsWith("/") || url.startsWith("https://images.unsplash.com/")) {
     return `/_next/image?url=${encodeURIComponent(url)}&w=${width}&q=75`;
   }
@@ -34,47 +38,120 @@ export function thumb(url: string, width: 128 | 256 | 384 | 640 | 1080 = 384) {
 
 // ── Upload hook shared by the picker, the library page and drop zones ──
 
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"];
+const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+const MAX_BYTES = 100 * 1024 * 1024; // Cloudinary's limit for a single (non-chunked) upload
+
+type CloudinaryUploadResult = {
+  public_id: string;
+  secure_url: string;
+  resource_type: string;
+  format?: string;
+  bytes: number;
+  width?: number;
+  height?: number;
+  created_at: string;
+  original_filename?: string;
+};
+
+// Upload one file straight from the browser to Cloudinary, reporting progress (0–1).
+function uploadToCloudinary(file: File, sig: { uploadUrl: string; fields: Record<string, string> }, onProgress: (p: number) => void) {
+  return new Promise<CloudinaryUploadResult>((resolve, reject) => {
+    const form = new FormData();
+    Object.entries(sig.fields).forEach(([k, v]) => form.append(k, v));
+    form.append("file", file);
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", sig.uploadUrl);
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total);
+    xhr.onload = () => {
+      const body = (() => {
+        try {
+          return JSON.parse(xhr.responseText);
+        } catch {
+          return {};
+        }
+      })();
+      if (xhr.status >= 200 && xhr.status < 300) resolve(body);
+      else reject(new Error(`"${file.name}": ${body?.error?.message ?? "upload failed"}`));
+    };
+    xhr.onerror = () => reject(new Error(`"${file.name}": network error — check your connection and try again.`));
+    xhr.send(form);
+  });
+}
+
 export function useUploader(onUploaded: (items: MediaItem[]) => void) {
   const toast = useToast();
-  const [uploading, setUploading] = useState(0);
+  const [active, setActive] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   const upload = useCallback(
     async (files: FileList | File[]) => {
       const list = Array.from(files);
-      if (list.length === 0) return;
-      setUploading((n) => n + list.length);
-      try {
-        const form = new FormData();
-        list.forEach((f) => form.append("files", f));
-        const res = await api<{ items: MediaItem[]; errors: string[] }>("/api/admin/media", { method: "POST", body: form });
-        res.errors.forEach((e) => toast.error(e));
-        if (res.items.length) {
-          toast.success(res.items.length === 1 ? "File uploaded" : `${res.items.length} files uploaded`);
-          onUploaded(res.items);
-        }
-      } catch (err) {
-        const body = (err as { body?: { errors?: string[] } }).body;
-        if (body?.errors?.length) body.errors.forEach((e) => toast.error(e));
-        else toast.error(errorMessage(err));
-      } finally {
-        setUploading((n) => n - list.length);
+      const valid = list.filter((f) => {
+        const ok = IMAGE_TYPES.includes(f.type) || VIDEO_TYPES.includes(f.type);
+        if (!ok) toast.error(`"${f.name}" isn't a supported file. Use JPG, PNG, WebP, AVIF, GIF, MP4, MOV or WebM.`);
+        else if (f.size > MAX_BYTES) toast.error(`"${f.name}" is too large (max 100 MB).`);
+        return ok && f.size <= MAX_BYTES;
+      });
+      if (valid.length === 0) return;
+
+      setActive((n) => n + valid.length);
+      const totals = valid.map((f) => f.size);
+      const done = valid.map(() => 0);
+      const report = () => setProgress(done.reduce((s, d, i) => s + d * totals[i], 0) / totals.reduce((a, b) => a + b, 0));
+
+      const results = await Promise.allSettled(
+        valid.map(async (file, i) => {
+          const kind = file.type.startsWith("video/") ? "video" : "image";
+          const sig = await api<{ uploadUrl: string; fields: Record<string, string> }>("/api/admin/media", {
+            method: "POST",
+            body: JSON.stringify({ kind }),
+          });
+          const r = await uploadToCloudinary(file, sig, (p) => {
+            done[i] = p;
+            report();
+          });
+          const item: MediaItem = {
+            id: r.public_id,
+            url: r.secure_url,
+            name: `${r.public_id.split("/").pop()}${r.format ? `.${r.format}` : ""}`,
+            kind: r.resource_type === "video" ? "video" : "image",
+            size: r.bytes,
+            createdAt: r.created_at,
+            builtIn: false,
+            width: r.width,
+            height: r.height,
+          };
+          return item;
+        })
+      );
+
+      const items = results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+      results.forEach((r) => r.status === "rejected" && toast.error(errorMessage(r.reason)));
+      if (items.length) {
+        toast.success(items.length === 1 ? "File uploaded" : `${items.length} files uploaded`);
+        onUploaded(items);
       }
+      setActive((n) => n - valid.length);
+      setProgress(0);
     },
     [onUploaded, toast]
   );
 
-  return { upload, uploading: uploading > 0 };
+  return { upload, uploading: active > 0, progress };
 }
 
 export function DropZone({
   onFiles,
   uploading,
+  progress = 0,
   accept = ACCEPT_ALL,
   multiple = true,
   compact,
 }: {
   onFiles: (files: FileList) => void;
   uploading: boolean;
+  progress?: number;
   accept?: string;
   multiple?: boolean;
   compact?: boolean;
@@ -120,22 +197,44 @@ export function DropZone({
         <Upload className="mb-2 text-gold" size={compact ? 20 : 26} />
       )}
       <p className="text-sm font-medium text-gray-800">
-        {uploading ? "Uploading…" : over ? "Drop to upload" : "Drag & drop files here, or click to browse"}
+        {uploading ? `Uploading… ${Math.round(progress * 100)}%` : over ? "Drop to upload" : "Drag & drop files here, or click to browse"}
       </p>
-      {!compact && (
-        <p className="mt-1 text-xs text-gray-500">
-          Images are resized and compressed automatically (JPG, PNG, WebP, GIF{accept.includes("video") ? " · MP4, WebM video" : ""})
-        </p>
+      {uploading ? (
+        <div className="mt-2.5 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-gray-200">
+          <div className="h-full rounded-full bg-gold transition-[width] duration-200" style={{ width: `${Math.max(4, progress * 100)}%` }} />
+        </div>
+      ) : (
+        !compact && (
+          <p className="mt-1 text-xs text-gray-500">
+            Stored on Cloudinary and delivered in the best size and format automatically (JPG, PNG, WebP, GIF
+            {accept.includes("video") ? " · MP4, MOV, WebM video up to 100 MB" : ""})
+          </p>
+        )
       )}
+    </div>
+  );
+}
+
+export function CloudinaryNotice() {
+  return (
+    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+      <strong>Uploads are off:</strong> Cloudinary isn&apos;t connected. Add <code className="rounded bg-amber-100 px-1">CLOUDINARY_URL</code> to the
+      environment variables (Vercel → Settings → Environment Variables), then redeploy. You can still pick built-in images or paste a link.
     </div>
   );
 }
 
 export function MediaThumb({ item, className }: { item: Pick<MediaItem, "url" | "kind">; className?: string }) {
   if (item.kind === "video") {
+    const poster = cloudinaryVideoPoster(item.url, 384);
     return (
       <div className={cn("relative bg-navy", className)}>
-        <video src={item.url} muted preload="metadata" className="h-full w-full object-cover" />
+        {poster ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={poster} alt="" loading="lazy" className="h-full w-full object-cover" />
+        ) : (
+          <video src={item.url} muted preload="metadata" className="h-full w-full object-cover" />
+        )}
         <Film size={16} className="absolute left-2 top-2 text-white drop-shadow" />
       </div>
     );
@@ -164,6 +263,7 @@ export function MediaPicker({
   const [selected, setSelected] = useState<string[]>([]);
   const [tab, setTab] = useState<"library" | "url">("library");
   const [url, setUrl] = useState("");
+  const [canUpload, setCanUpload] = useState(true);
   const toast = useToast();
 
   useEffect(() => {
@@ -171,13 +271,16 @@ export function MediaPicker({
     setSelected([]);
     setUrl("");
     setTab("library");
-    api<{ items: MediaItem[] }>("/api/admin/media")
-      .then((r) => setItems(r.items))
+    api<{ items: MediaItem[]; cloudinary: boolean }>("/api/admin/media")
+      .then((r) => {
+        setItems(r.items);
+        setCanUpload(r.cloudinary);
+      })
       .catch((e) => toast.error(errorMessage(e)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const { upload, uploading } = useUploader(
+  const { upload, uploading, progress } = useUploader(
     useCallback(
       (uploaded: MediaItem[]) => {
         setItems((prev) => [...uploaded, ...(prev ?? [])]);
@@ -264,13 +367,18 @@ export function MediaPicker({
         </Field>
       ) : (
         <>
-          <DropZone
-            compact
-            uploading={uploading}
-            onFiles={upload}
-            accept={kind === "video" ? "video/mp4,video/webm" : ACCEPT_IMAGES}
-            multiple={multiple}
-          />
+          {canUpload ? (
+            <DropZone
+              compact
+              uploading={uploading}
+              progress={progress}
+              onFiles={upload}
+              accept={kind === "video" ? ACCEPT_VIDEOS : ACCEPT_IMAGES}
+              multiple={multiple}
+            />
+          ) : (
+            <CloudinaryNotice />
+          )}
           <div className="relative my-4">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by file name…" className={cn(inputBase, "pl-9")} />
@@ -334,7 +442,7 @@ export function MediaField({
 }) {
   const [open, setOpen] = useState(false);
   const [over, setOver] = useState(false);
-  const { upload, uploading } = useUploader(
+  const { upload, uploading, progress } = useUploader(
     useCallback((items: MediaItem[]) => items[0] && onChange(items[0].url), [onChange])
   );
 
@@ -371,8 +479,9 @@ export function MediaField({
           </button>
         )}
         {uploading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/85">
             <Loader2 className="animate-spin text-gold" />
+            <span className="text-xs font-semibold tabular-nums text-gray-700">{Math.round(progress * 100)}%</span>
           </div>
         )}
         {value && !uploading && (

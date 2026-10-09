@@ -28,7 +28,7 @@ export default function DashboardPage() {
     Promise.all([
       api<{ data: SiteContent }>("/api/admin/content/site"),
       api<{ data: PackagesData }>("/api/admin/content/packages"),
-      api<{ items: MediaItem[] }>("/api/admin/media"),
+      api<{ items: MediaItem[] }>("/api/admin/media").catch(() => ({ items: [] as MediaItem[] })),
       api<{ backups: BackupInfo[] }>("/api/admin/backups"),
     ])
       .then(([s, p, m, b]) => setData({ site: s.data, packages: p.data, media: m.items, backups: b.backups }))

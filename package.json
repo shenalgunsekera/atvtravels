@@ -3,13 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/list-public-media.js && next dev",
+    "prebuild": "node scripts/list-public-media.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "video:compress": "node scripts/compress-hero-video.js"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
+    "cloudinary": "^2.11.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.469.0",

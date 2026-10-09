@@ -38,9 +38,9 @@ export default function BackupsPage() {
       confirmLabel: "Restore",
     });
     if (!ok) return;
-    setBusy(b.file);
+    setBusy(b.id);
     try {
-      await api("/api/admin/backups", { method: "POST", body: JSON.stringify({ restore: b.file }) });
+      await api("/api/admin/backups", { method: "POST", body: JSON.stringify({ restore: b.id }) });
       toast.success("Restored — the website is updated");
       load();
     } catch (e) {
@@ -104,7 +104,7 @@ export default function BackupsPage() {
       ) : (
         <Card className="divide-y divide-gray-100">
           {backups.map((b) => (
-            <div key={b.file} className="flex items-center gap-3 px-4 py-3 sm:px-5">
+            <div key={b.id} className="flex items-center gap-3 px-4 py-3 sm:px-5">
               <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
                 <History size={16} />
               </span>
@@ -117,7 +117,7 @@ export default function BackupsPage() {
                   {new Date(b.createdAt).toLocaleString()} · {formatBytes(b.size)}
                 </p>
               </div>
-              <Button size="sm" icon={<RotateCcw size={13} />} loading={busy === b.file} onClick={() => restore(b)}>
+              <Button size="sm" icon={<RotateCcw size={13} />} loading={busy === b.id} onClick={() => restore(b)}>
                 Restore
               </Button>
             </div>

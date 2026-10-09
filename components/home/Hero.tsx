@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import SiteImage from "@/components/ui/SiteImage";
+import { cloudinaryImage, cloudinaryVideo } from "@/lib/cloudinary-url";
 import type { SiteContent } from "@/lib/site-types";
 
 export default function Hero({ hero }: { hero: SiteContent["home"]["hero"] }) {
@@ -19,11 +20,11 @@ export default function Hero({ hero }: { hero: SiteContent["home"]["hero"] }) {
           muted
           loop
           playsInline
-          poster={hero.posterImage || undefined}
+          poster={hero.posterImage ? cloudinaryImage(hero.posterImage, 1920) : undefined}
           className="absolute inset-0 w-full h-full object-cover"
           preload="auto"
         >
-          <source src={hero.videoUrl} type={isWebm ? "video/webm" : "video/mp4"} />
+          <source src={cloudinaryVideo(hero.videoUrl)} type={isWebm ? "video/webm" : "video/mp4"} />
         </video>
       ) : hero.posterImage ? (
         <SiteImage src={hero.posterImage} alt="" fill preload sizes="100vw" className="object-cover" />

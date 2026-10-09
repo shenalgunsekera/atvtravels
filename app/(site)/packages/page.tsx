@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import PageHero from "@/components/ui/PageHero";
 import PackagesView from "@/components/packages/PackagesView";
 import CtaBanner from "@/components/home/CtaBanner";
@@ -21,9 +20,7 @@ export default async function PackagesPage() {
   return (
     <>
       <PageHero hero={page.hero} crumb="Tour Packages" />
-      <Suspense>
-        <PackagesView countries={countries} page={page} whatsappNumber={site.settings.whatsappNumber} />
-      </Suspense>
+      <PackagesView countries={countries} page={page} whatsappNumber={site.settings.whatsappNumber} />
       {page.ctaVisible && <CtaBanner cta={site.cta} whatsappNumber={site.settings.whatsappNumber} />}
     </>
   );

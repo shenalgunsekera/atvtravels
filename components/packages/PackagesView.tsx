@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle } from "lucide-react";
@@ -17,19 +17,28 @@ interface Props {
   whatsappNumber: string;
 }
 
-export default function PackagesView({ countries, page, whatsappNumber }: Props) {
-  const searchParams = useSearchParams();
-  const [active, setActive] = useState("all");
+// Follows ?country= in the URL. Kept in its own tiny Suspense boundary: useSearchParams opts its
+// subtree out of server rendering, and this way the package grid itself stays server-rendered.
+function CountryParam({ onChange }: { onChange: (country: string | null) => void }) {
+  const params = useSearchParams();
+  useEffect(() => onChange(params.get("country")), [params, onChange]);
+  return null;
+}
 
-  useEffect(() => {
-    const c = searchParams.get("country");
-    if (c && countries.find((x) => x.id === c)) setActive(c);
-  }, [searchParams, countries]);
+export default function PackagesView({ countries, page, whatsappNumber }: Props) {
+  const [active, setActive] = useState("all");
+  const onCountryParam = useCallback(
+    (c: string | null) => setActive(c && countries.some((x) => x.id === c) ? c : "all"),
+    [countries]
+  );
 
   const filtered = active === "all" ? countries : countries.filter((c) => c.id === active);
 
   return (
     <section className="section-padding">
+      <Suspense fallback={null}>
+        <CountryParam onChange={onCountryParam} />
+      </Suspense>
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-12">
         <SectionHeader label={page.intro.label} title={page.intro.title} description={page.intro.description} />
 

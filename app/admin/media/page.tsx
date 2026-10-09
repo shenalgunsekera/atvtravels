@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Copy, ExternalLink, FolderOpen, Loader2, Search, Trash2 } from "lucide-react";
 import { Badge, Button, EmptyState, LoadError, Modal, PageHeader, Spinner, inputBase, useConfirm } from "@/components/admin/ui";
-import { DropZone, MediaThumb, formatBytes, useUploader, type MediaItem } from "@/components/admin/media";
+import { CloudinaryNotice, DropZone, MediaThumb, formatBytes, useUploader, type MediaItem } from "@/components/admin/media";
 import { api, errorMessage } from "@/components/admin/api";
 import { useToast } from "@/components/admin/toast";
 import { cn } from "@/lib/utils";
@@ -28,15 +28,20 @@ export default function MediaPage() {
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const [canUpload, setCanUpload] = useState(true);
+
   const load = useCallback(() => {
     setError(null);
-    api<{ items: MediaItem[] }>("/api/admin/media")
-      .then((r) => setItems(r.items))
+    api<{ items: MediaItem[]; cloudinary: boolean }>("/api/admin/media")
+      .then((r) => {
+        setItems(r.items);
+        setCanUpload(r.cloudinary);
+      })
       .catch((e) => setError(errorMessage(e)));
   }, []);
   useEffect(load, [load]);
 
-  const { upload, uploading } = useUploader(useCallback((uploaded: MediaItem[]) => setItems((prev) => [...uploaded, ...(prev ?? [])]), []));
+  const { upload, uploading, progress } = useUploader(useCallback((uploaded: MediaItem[]) => setItems((prev) => [...uploaded, ...(prev ?? [])]), []));
 
   useEffect(() => {
     setUsages(null);
@@ -81,7 +86,7 @@ export default function MediaPage() {
     if (!ok) return;
     setDeleting(true);
     try {
-      await api(`/api/admin/media?name=${encodeURIComponent(item.name)}&force=1`, { method: "DELETE" });
+      await api("/api/admin/media", { method: "DELETE", body: JSON.stringify({ id: item.id, kind: item.kind, url: item.url, force: true }) });
       setItems((prev) => prev?.filter((i) => i.url !== item.url) ?? null);
       setSelected(null);
       toast.success("File deleted");
@@ -98,7 +103,7 @@ export default function MediaPage() {
     <>
       <PageHeader title="Media library" description="Upload photos and videos once, then use them anywhere on the site." />
 
-      <DropZone onFiles={upload} uploading={uploading} />
+      {canUpload ? <DropZone onFiles={upload} uploading={uploading} progress={progress} /> : <CloudinaryNotice />}
 
       <div className="my-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex rounded-lg bg-gray-200/60 p-1 text-[13px] font-medium">
@@ -190,7 +195,7 @@ export default function MediaPage() {
               </div>
               <div>
                 <dt className="text-xs text-gray-400">Source</dt>
-                <dd>{selected.builtIn ? <Badge>Built-in (read-only)</Badge> : <Badge tone="gold">Uploaded</Badge>}</dd>
+                <dd>{selected.builtIn ? <Badge>Built-in (read-only)</Badge> : <Badge tone="gold">Cloudinary</Badge>}</dd>
               </div>
             </dl>
             <div>

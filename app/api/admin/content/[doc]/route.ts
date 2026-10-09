@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin-auth";
-import { VersionConflictError, isDocName, readDoc, writeDoc } from "@/lib/store";
+import { StorageNotConfiguredError, VersionConflictError, isDocName, readDoc, writeDoc } from "@/lib/store";
 
 type Ctx = { params: Promise<{ doc: string }> };
 
@@ -32,6 +32,9 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
   } catch (err) {
     if (err instanceof VersionConflictError) {
       return NextResponse.json({ error: err.message }, { status: 409 });
+    }
+    if (err instanceof StorageNotConfiguredError) {
+      return NextResponse.json({ error: err.message }, { status: 503 });
     }
     console.error(`Admin save (${doc}) failed:`, err);
     return NextResponse.json({ error: "Couldn't save. Please try again." }, { status: 500 });

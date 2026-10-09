@@ -2,6 +2,8 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { DATABASE_URL, db } from "./db";
+import { LOGIN_SQL } from "./sql";
 
 export const SESSION_COOKIE = "atv_admin";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
@@ -54,25 +56,33 @@ export async function requireAdmin(): Promise<NextResponse | null> {
   return NextResponse.json({ error: "Your session has expired. Please sign in again." }, { status: 401 });
 }
 
-// ── Login rate limiting (per IP, in memory) ────────────────────────────
+// ── Login rate limiting (per IP) ───────────────────────────────────────
+// Stored in Postgres when available, since serverless instances don't share memory.
 const attempts = new Map<string, { count: number; resetAt: number }>();
 const MAX_ATTEMPTS = 8;
 const WINDOW_MS = 15 * 60 * 1000;
 
-export function loginAllowed(ip: string): boolean {
-  const now = Date.now();
+export async function loginAllowed(ip: string): Promise<boolean> {
+  if (DATABASE_URL) {
+    const [row] = await db(LOGIN_SQL.get, [ip]);
+    return !row || Number(row.count) < MAX_ATTEMPTS;
+  }
   const entry = attempts.get(ip);
-  if (!entry || entry.resetAt < now) return true;
-  return entry.count < MAX_ATTEMPTS;
+  return !entry || entry.resetAt < Date.now() || entry.count < MAX_ATTEMPTS;
 }
 
-export function recordFailedLogin(ip: string) {
+export async function recordFailedLogin(ip: string) {
+  if (DATABASE_URL) {
+    await db(LOGIN_SQL.fail, [ip]);
+    return;
+  }
   const now = Date.now();
   const entry = attempts.get(ip);
   if (!entry || entry.resetAt < now) attempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
   else entry.count += 1;
 }
 
-export function clearFailedLogins(ip: string) {
-  attempts.delete(ip);
+export async function clearFailedLogins(ip: string) {
+  if (DATABASE_URL) await db(LOGIN_SQL.clear, [ip]);
+  else attempts.delete(ip);
 }

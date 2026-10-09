@@ -24,15 +24,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ADMIN_SECRET is not set on the server." }, { status: 500 });
   }
   const ip = clientIp(req);
-  if (!loginAllowed(ip)) {
+  if (!(await loginAllowed(ip))) {
     return NextResponse.json({ error: "Too many attempts. Please wait 15 minutes and try again." }, { status: 429 });
   }
   const { password } = await req.json().catch(() => ({ password: "" }));
   if (typeof password !== "string" || !checkPassword(password)) {
-    recordFailedLogin(ip);
+    await recordFailedLogin(ip);
     return NextResponse.json({ error: "Incorrect password." }, { status: 401 });
   }
-  clearFailedLogins(ip);
+  await clearFailedLogins(ip);
   const { token, expires } = createSessionToken();
   const res = NextResponse.json({ authenticated: true });
   res.cookies.set(SESSION_COOKIE, token, {
