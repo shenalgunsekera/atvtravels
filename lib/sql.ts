@@ -22,7 +22,26 @@ export const SCHEMA = [
      count integer NOT NULL,
      reset_at timestamptz NOT NULL
    )`,
+  // Uploaded images when Cloudinary isn't configured (resized to ≤2000px WebP first).
+  `CREATE TABLE IF NOT EXISTS media_files (
+     id text PRIMARY KEY,
+     name text NOT NULL,
+     mime text NOT NULL,
+     size integer NOT NULL,
+     width integer,
+     height integer,
+     data bytea NOT NULL,
+     created_at timestamptz NOT NULL DEFAULT now()
+   )`,
 ];
+
+// Binary data is passed as hex / returned as base64 text so it works with any Postgres driver.
+export const MEDIA_SQL = {
+  insert: `INSERT INTO media_files (id, name, mime, size, width, height, data) VALUES ($1, $2, $3, $4, $5, $6, decode($7, 'hex'))`,
+  list: `SELECT id, name, mime, size, width, height, created_at FROM media_files ORDER BY created_at DESC LIMIT 2000`,
+  get: `SELECT mime, encode(data, 'base64') AS b64 FROM media_files WHERE id = $1`,
+  delete: `DELETE FROM media_files WHERE id = $1`,
+};
 
 export const CONTENT_SQL = {
   read: `SELECT data, version FROM content_docs WHERE name = $1`,

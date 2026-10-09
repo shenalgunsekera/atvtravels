@@ -41,6 +41,60 @@ export function thumb(url: string, width: 128 | 256 | 384 | 640 | 1080 = 384) {
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"];
 const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 const MAX_BYTES = 100 * 1024 * 1024; // Cloudinary's limit for a single (non-chunked) upload
+const DIRECT_LIMIT = 4 * 1024 * 1024; // stay under Vercel's 4.5 MB request limit
+
+export type UploadTarget = "cloudinary" | "database" | "local" | "none";
+
+// Where uploads go, fetched once per page load.
+let targetPromise: Promise<UploadTarget> | null = null;
+export function getUploadTarget(): Promise<UploadTarget> {
+  targetPromise ??= api<{ upload: UploadTarget }>("/api/admin/media?target=1")
+    .then((r) => r.upload)
+    .catch((err) => {
+      targetPromise = null;
+      throw err;
+    });
+  return targetPromise;
+}
+
+// POST a form with upload progress (0–1); resolves with the parsed JSON response.
+function xhrUpload<T>(url: string, form: FormData, fileName: string, onProgress: (p: number) => void) {
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total);
+    xhr.onload = () => {
+      let body: Record<string, unknown> = {};
+      try {
+        body = JSON.parse(xhr.responseText);
+      } catch {}
+      if (xhr.status >= 200 && xhr.status < 300) return resolve(body as T);
+      if (xhr.status === 401) window.location.reload();
+      const err = body.error as string | { message?: string } | undefined;
+      const msg = typeof err === "string" ? err : err?.message ?? "upload failed";
+      reject(new Error(msg.includes(fileName) ? msg : `"${fileName}": ${msg}`));
+    };
+    xhr.onerror = () => reject(new Error(`"${fileName}": network error — check your connection and try again.`));
+    xhr.send(form);
+  });
+}
+
+// Shrink big photos in the browser (≤2000px WebP) so they fit through Vercel's request limit.
+async function shrinkForUpload(file: File): Promise<File> {
+  if (file.size <= DIRECT_LIMIT || file.type === "image/gif") return file;
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const scale = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  for (const quality of [0.85, 0.7, 0.55]) {
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/webp", quality));
+    if (blob && blob.size <= DIRECT_LIMIT) return new File([blob], file.name.replace(/.[^.]+$/, ".webp"), { type: "image/webp" });
+  }
+  throw new Error(`"${file.name}" is too large — try a smaller photo.`);
+}
 
 type CloudinaryUploadResult = {
   public_id: string;
@@ -51,32 +105,42 @@ type CloudinaryUploadResult = {
   width?: number;
   height?: number;
   created_at: string;
-  original_filename?: string;
 };
 
-// Upload one file straight from the browser to Cloudinary, reporting progress (0–1).
-function uploadToCloudinary(file: File, sig: { uploadUrl: string; fields: Record<string, string> }, onProgress: (p: number) => void) {
-  return new Promise<CloudinaryUploadResult>((resolve, reject) => {
+async function uploadOne(file: File, target: UploadTarget, onProgress: (p: number) => void): Promise<MediaItem> {
+  const kind = file.type.startsWith("video/") ? "video" : "image";
+  if (target === "none") throw new Error("Uploads are off until the database is connected (see the banner at the top).");
+
+  if (target === "cloudinary") {
+    const sig = await api<{ uploadUrl: string; fields: Record<string, string> }>("/api/admin/media", {
+      method: "POST",
+      body: JSON.stringify({ kind }),
+    });
     const form = new FormData();
     Object.entries(sig.fields).forEach(([k, v]) => form.append(k, v));
     form.append("file", file);
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", sig.uploadUrl);
-    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total);
-    xhr.onload = () => {
-      const body = (() => {
-        try {
-          return JSON.parse(xhr.responseText);
-        } catch {
-          return {};
-        }
-      })();
-      if (xhr.status >= 200 && xhr.status < 300) resolve(body);
-      else reject(new Error(`"${file.name}": ${body?.error?.message ?? "upload failed"}`));
+    const r = await xhrUpload<CloudinaryUploadResult>(sig.uploadUrl, form, file.name, onProgress);
+    return {
+      id: r.public_id,
+      url: r.secure_url,
+      name: `${r.public_id.split("/").pop()}${r.format ? `.${r.format}` : ""}`,
+      kind: r.resource_type === "video" ? "video" : "image",
+      size: r.bytes,
+      createdAt: r.created_at,
+      builtIn: false,
+      width: r.width,
+      height: r.height,
     };
-    xhr.onerror = () => reject(new Error(`"${file.name}": network error — check your connection and try again.`));
-    xhr.send(form);
-  });
+  }
+
+  // Neon / local disk: images only.
+  if (kind === "video") {
+    throw new Error(`"${file.name}": video uploads need Cloudinary. You can paste a video link instead.`);
+  }
+  const form = new FormData();
+  form.append("file", await shrinkForUpload(file));
+  const res = await xhrUpload<{ item: MediaItem }>("/api/admin/media", form, file.name, onProgress);
+  return res.item;
 }
 
 export function useUploader(onUploaded: (items: MediaItem[]) => void) {
@@ -100,36 +164,28 @@ export function useUploader(onUploaded: (items: MediaItem[]) => void) {
       const done = valid.map(() => 0);
       const report = () => setProgress(done.reduce((s, d, i) => s + d * totals[i], 0) / totals.reduce((a, b) => a + b, 0));
 
+      let target: UploadTarget;
+      try {
+        target = await getUploadTarget();
+      } catch (err) {
+        toast.error(errorMessage(err));
+        setActive((n) => n - valid.length);
+        return;
+      }
+
       const results = await Promise.allSettled(
-        valid.map(async (file, i) => {
-          const kind = file.type.startsWith("video/") ? "video" : "image";
-          const sig = await api<{ uploadUrl: string; fields: Record<string, string> }>("/api/admin/media", {
-            method: "POST",
-            body: JSON.stringify({ kind }),
-          });
-          const r = await uploadToCloudinary(file, sig, (p) => {
+        valid.map((file, i) =>
+          uploadOne(file, target, (p) => {
             done[i] = p;
             report();
-          });
-          const item: MediaItem = {
-            id: r.public_id,
-            url: r.secure_url,
-            name: `${r.public_id.split("/").pop()}${r.format ? `.${r.format}` : ""}`,
-            kind: r.resource_type === "video" ? "video" : "image",
-            size: r.bytes,
-            createdAt: r.created_at,
-            builtIn: false,
-            width: r.width,
-            height: r.height,
-          };
-          return item;
-        })
+          })
+        )
       );
 
       const items = results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
       results.forEach((r) => r.status === "rejected" && toast.error(errorMessage(r.reason)));
       if (items.length) {
-        toast.success(items.length === 1 ? "File uploaded" : `${items.length} files uploaded`);
+        toast.success(items.length === 1 ? "Uploaded" : `${items.length} files uploaded`);
         onUploaded(items);
       }
       setActive((n) => n - valid.length);
@@ -206,8 +262,8 @@ export function DropZone({
       ) : (
         !compact && (
           <p className="mt-1 text-xs text-gray-500">
-            Stored on Cloudinary and delivered in the best size and format automatically (JPG, PNG, WebP, GIF
-            {accept.includes("video") ? " · MP4, MOV, WebM video up to 100 MB" : ""})
+            Big photos are resized and compressed automatically (JPG, PNG, WebP, GIF
+            {accept.includes("video") ? " · MP4, MOV, WebM video" : ""})
           </p>
         )
       )}
@@ -215,11 +271,11 @@ export function DropZone({
   );
 }
 
-export function CloudinaryNotice() {
+export function UploadsOffNotice() {
   return (
     <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
-      <strong>Uploads are off:</strong> Cloudinary isn&apos;t connected. Add <code className="rounded bg-amber-100 px-1">CLOUDINARY_URL</code> to the
-      environment variables (Vercel → Settings → Environment Variables), then redeploy. You can still pick built-in images or paste a link.
+      <strong>Uploads are off:</strong> the database isn&apos;t connected yet. In Vercel open <strong>Storage → Create Database → Neon</strong>,
+      connect it to this project, then redeploy. Until then you can pick built-in images or paste an image link.
     </div>
   );
 }
@@ -271,10 +327,10 @@ export function MediaPicker({
     setSelected([]);
     setUrl("");
     setTab("library");
-    api<{ items: MediaItem[]; cloudinary: boolean }>("/api/admin/media")
+    api<{ items: MediaItem[]; upload: UploadTarget }>("/api/admin/media")
       .then((r) => {
         setItems(r.items);
-        setCanUpload(r.cloudinary);
+        setCanUpload(r.upload !== "none");
       })
       .catch((e) => toast.error(errorMessage(e)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -377,7 +433,7 @@ export function MediaPicker({
               multiple={multiple}
             />
           ) : (
-            <CloudinaryNotice />
+            <UploadsOffNotice />
           )}
           <div className="relative my-4">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />

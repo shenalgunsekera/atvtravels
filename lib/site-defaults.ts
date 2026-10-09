@@ -58,8 +58,8 @@ export const SITE_DEFAULTS: SiteContent = {
       titleAccent: "Our Passion",
       subtitle:
         "Premium tour packages to Thailand, Malaysia, Maldives & Bali.\nCrafted with care. Delivered with excellence.",
-      videoUrl: "/videos/hero/hero.webm?v=20260329",
-      posterImage: "",
+      videoUrl: "/videos/hero/hero-web.mp4",
+      posterImage: "/videos/hero/hero-poster.webp",
       primaryCta: { label: "Explore Packages", href: "/packages" },
       secondaryCta: { label: "Get In Touch", href: "/contact" },
     },

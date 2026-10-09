@@ -1,7 +1,9 @@
-// Server-only media library: uploads live in Cloudinary; files shipped in /public are
-// listed read-only (from lib/public-media.json, generated at build time).
+// Server-only media library: uploads live in Cloudinary (if configured) or Neon; files
+// shipped in /public are listed read-only (from lib/public-media.json, generated at build time).
 import { readDoc } from "./store";
 import { cloudinaryConfigured, listResources } from "./cloudinary";
+import { DATABASE_URL } from "./db";
+import { listStored } from "./media-store";
 import publicMedia from "./public-media.json";
 
 export type MediaItem = {
@@ -16,7 +18,16 @@ export type MediaItem = {
   height?: number;
 };
 
-export async function listMedia(): Promise<{ items: MediaItem[]; cloudinary: boolean }> {
+// Where new uploads go: Cloudinary if configured, else Neon, else local disk (dev only).
+export type UploadTarget = "cloudinary" | "database" | "local" | "none";
+
+export function uploadTarget(): UploadTarget {
+  if (cloudinaryConfigured()) return "cloudinary";
+  if (DATABASE_URL) return "database";
+  return process.env.VERCEL ? "none" : "local";
+}
+
+export async function listMedia(): Promise<{ items: MediaItem[]; upload: UploadTarget }> {
   const builtIn: MediaItem[] = (publicMedia as { url: string; name: string; kind: "image" | "video"; size: number }[]).map((m) => ({
     id: m.url,
     url: m.url,
@@ -26,9 +37,26 @@ export async function listMedia(): Promise<{ items: MediaItem[]; cloudinary: boo
     createdAt: "",
     builtIn: true,
   }));
-  if (!cloudinaryConfigured()) return { items: builtIn, cloudinary: false };
+  const upload = uploadTarget();
 
-  const uploads: MediaItem[] = (await listResources()).map((r) => ({
+  // Images stored in Neon / on disk (also listed when Cloudinary is added later).
+  const stored: MediaItem[] =
+    upload === "none"
+      ? []
+      : (await listStored()).map((m) => ({
+          id: m.id,
+          url: `/media/${m.id}`,
+          name: m.name,
+          kind: "image" as const,
+          size: m.size,
+          createdAt: m.createdAt,
+          builtIn: false,
+          width: m.width,
+          height: m.height,
+        }));
+  if (upload !== "cloudinary") return { items: [...stored, ...builtIn], upload };
+
+  const cloud: MediaItem[] = (await listResources()).map((r) => ({
     id: r.public_id,
     url: r.secure_url,
     name: `${r.public_id.split("/").pop()}${r.format ? `.${r.format}` : ""}`,
@@ -39,7 +67,7 @@ export async function listMedia(): Promise<{ items: MediaItem[]; cloudinary: boo
     width: r.width,
     height: r.height,
   }));
-  return { items: [...uploads, ...builtIn], cloudinary: true };
+  return { items: [...cloud, ...stored, ...builtIn], upload };
 }
 
 // Where a media URL is referenced across site content and packages.

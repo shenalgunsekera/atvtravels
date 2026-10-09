@@ -36,3 +36,4 @@ next-env.d.ts
 
 # admin panel automatic backups
 /data/backups/
+/data/uploads/

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Copy, ExternalLink, FolderOpen, Loader2, Search, Trash2 } from "lucide-react";
 import { Badge, Button, EmptyState, LoadError, Modal, PageHeader, Spinner, inputBase, useConfirm } from "@/components/admin/ui";
-import { CloudinaryNotice, DropZone, MediaThumb, formatBytes, useUploader, type MediaItem } from "@/components/admin/media";
+import { DropZone, UploadsOffNotice, MediaThumb, formatBytes, useUploader, type MediaItem, type UploadTarget } from "@/components/admin/media";
 import { api, errorMessage } from "@/components/admin/api";
 import { useToast } from "@/components/admin/toast";
 import { cn } from "@/lib/utils";
@@ -32,10 +32,10 @@ export default function MediaPage() {
 
   const load = useCallback(() => {
     setError(null);
-    api<{ items: MediaItem[]; cloudinary: boolean }>("/api/admin/media")
+    api<{ items: MediaItem[]; upload: UploadTarget }>("/api/admin/media")
       .then((r) => {
         setItems(r.items);
-        setCanUpload(r.cloudinary);
+        setCanUpload(r.upload !== "none");
       })
       .catch((e) => setError(errorMessage(e)));
   }, []);
@@ -103,7 +103,7 @@ export default function MediaPage() {
     <>
       <PageHeader title="Media library" description="Upload photos and videos once, then use them anywhere on the site." />
 
-      {canUpload ? <DropZone onFiles={upload} uploading={uploading} progress={progress} /> : <CloudinaryNotice />}
+      {canUpload ? <DropZone onFiles={upload} uploading={uploading} progress={progress} /> : <UploadsOffNotice />}
 
       <div className="my-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex rounded-lg bg-gray-200/60 p-1 text-[13px] font-medium">
@@ -195,7 +195,7 @@ export default function MediaPage() {
               </div>
               <div>
                 <dt className="text-xs text-gray-400">Source</dt>
-                <dd>{selected.builtIn ? <Badge>Built-in (read-only)</Badge> : <Badge tone="gold">Cloudinary</Badge>}</dd>
+                <dd>{selected.builtIn ? <Badge>Built-in (read-only)</Badge> : <Badge tone="gold">{selected.url.startsWith("/media/") ? "Uploaded" : "Cloudinary"}</Badge>}</dd>
               </div>
             </dl>
             <div>

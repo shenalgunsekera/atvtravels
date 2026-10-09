@@ -92,9 +92,13 @@ export function normalizeCountry(raw: Json, key = ""): Country {
 export function normalizePackages(raw: Json): PackagesData {
   const out: PackagesData = {};
   if (!isObject(raw)) return out;
+  const seen = new Set<string>();
   for (const [key, value] of Object.entries(raw)) {
     const country = normalizeCountry(value, key);
-    if (country.id) out[country.id] = country;
+    if (!country.id) continue;
+    // Package ids must be unique across all destinations (they're used in admin URLs).
+    country.packages = country.packages.filter((p) => !seen.has(p.id) && seen.add(p.id));
+    out[country.id] = country;
   }
   return out;
 }

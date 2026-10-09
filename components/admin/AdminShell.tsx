@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Package, MapPin, House, Info, Phone, LayoutGrid, Images, Settings, FolderOpen,
-  DatabaseBackup, ExternalLink, LogOut, Menu, X,
+  DatabaseBackup, ExternalLink, LogOut, Menu, TriangleAlert, X,
 } from "lucide-react";
 import { ToastProvider } from "./toast";
 import { cn } from "@/lib/utils";
@@ -43,7 +43,7 @@ function isActive(pathname: string, href: string) {
   return href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export default function AdminShell({ children }: { children: React.ReactNode }) {
+export default function AdminShell({ children, storageMissing = false }: { children: React.ReactNode; storageMissing?: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -143,6 +143,18 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </header>
 
         <main className="lg:pl-64">
+          {storageMissing && (
+            <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900 sm:px-6 lg:px-10">
+              <div className="mx-auto flex max-w-5xl items-start gap-2.5">
+                <TriangleAlert size={16} className="mt-0.5 flex-shrink-0 text-amber-600" />
+                <p>
+                  <strong>Saving is turned off — the database isn&apos;t connected.</strong> In Vercel, open your project →{" "}
+                  <strong>Storage</strong> → <strong>Create Database</strong> → <strong>Neon</strong> → connect it to this project, then{" "}
+                  <strong>Redeploy</strong>. Your current content is copied in automatically.
+                </p>
+              </div>
+            </div>
+          )}
           <div className="mx-auto max-w-5xl px-4 py-6 pb-32 sm:px-6 lg:px-10 lg:py-10">{children}</div>
         </main>
       </div>

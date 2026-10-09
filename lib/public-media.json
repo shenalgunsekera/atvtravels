@@ -264,6 +264,18 @@
     "size": 107802
   },
   {
+    "url": "/videos/hero/hero-poster.webp",
+    "name": "hero-poster.webp",
+    "kind": "image",
+    "size": 147094
+  },
+  {
+    "url": "/videos/hero/hero-web.mp4",
+    "name": "hero-web.mp4",
+    "kind": "video",
+    "size": 4124537
+  },
+  {
     "url": "/videos/hero/hero.mp4",
     "name": "hero.mp4",
     "kind": "video",
