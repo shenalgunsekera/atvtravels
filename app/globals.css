@@ -118,3 +118,11 @@
 .admin-ui h1, .admin-ui h2, .admin-ui h3, .admin-ui h4, .admin-ui h5 {
   font-family: var(--font-inter);
 }
+
+/* Page-change transition: ATV loader holds briefly, then fades out (app/(site)/template.tsx) */
+.page-transition {
+  animation: pageTransitionOut 0.4s ease-out 0.45s forwards;
+}
+@keyframes pageTransitionOut {
+  to { opacity: 0; visibility: hidden; }
+}
