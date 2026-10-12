@@ -113,7 +113,10 @@ export function slugify(text: string): string {
     .slice(0, 48);
 }
 
+// Uses api.whatsapp.com rather than wa.me: wa.me's redirect corrupts emojis in the
+// pre-filled text (they arrive as "�").
 export function whatsappUrl(number: string, message?: string): string {
-  const base = `https://wa.me/${number.replace(/\D/g, "")}`;
-  return message ? `${base}?text=${encodeURIComponent(message)}` : base;
+  const phone = number.replace(/\D/g, "");
+  if (!message) return `https://api.whatsapp.com/send?phone=${phone}`;
+  return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
 }
